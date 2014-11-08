@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style type="text/css">
+    body { font-size: 20px; }
+    textarea { font-family: courier, monospace; width: 100%; font-size: 24px; }
+    section.main { width: 50%; margin: auto; }
+    h3 { text-align: center }
+    h2 span { font-size: 120%; }
+    input[type=button] { position: absolute; top: 10px; right: 10px; }
+  </style>
+  <script type="text/javascript">
+    var data = [];
+
+    function goOperate() {
+      document.querySelector("section.operation").style.display = "block";
+      document.querySelector("section.configuration").style.display = "none";
+    }
+
+    function goConfig() {
+      document.querySelector("section.configuration").style.display = "block";
+      document.querySelector("section.operation").style.display = "none";
+    }
+
+    // convert a text table into a two dimensional array, skipping blank lines.
+    function nonBlankFilter(string) { return string.trim(); }
+    function parseTextTable(table) {
+      return table.split("\n")
+        .filter(nonBlankFilter)
+        .map(function (row) { return row.split(/\s+/).filter(nonBlankFilter); });
+    }
+
+    // Revisa el format d'una fila: num, codi, inicials, inicials
+    function checkRowFormat(row) {
+      return (
+           (row.length === 4)
+        && (row[0].match(/^\d+$/))
+        && (row[1].match(/^\w+$/))
+        && (row[2].match(/^\w+$/))
+        && (row[3].match(/^\w+$/))
+      );
+    }
+
+    // guarda el contingut de la configuració, si és correcte.
+    function parseConfig(config) {
+      if (!config) return;
+      var parsedData = parseTextTable(config);
+      console.log(parsedData);
+      if (parsedData.every(checkRowFormat)) {
+        data = parsedData;
+      }
+      console.log(data.join("|").toString());
+    }
+
+    function rowMatches(row, surname) {
+      return (
+           (row[2].toLowerCase() <= surname.slice(0, row[2].length).toLowerCase())
+        && (row[3].toLowerCase() >= (surname+'zzzzzzzz').slice(0, row[3].length).toLowerCase())
+      );
+    }
+
+    function parseSurname(surname) {
+      matching = data.filter(function(row) {
+        return rowMatches(row, surname);
+      });
+      if (matching.length === 1) {
+        console.log(surname, matching[0]);
+        document.querySelector("#num_taula").textContent = matching[0][0];
+        document.querySelector("#codi_taula").textContent = matching[0][1];
+        document.querySelector("#result").style.display = "block";
+      } else {
+        document.querySelector("#result").style.display = "none";
+      }
+    }
+
+  </script>
+<body>
+  <section class="main configuration">
+    <h3>configuració <input type="button" onclick="goOperate()" value="OK"></h3>
+    <p>Escriu el llistat de taules i cognoms, en el següent format:
+      <pre>num.taula  codi taula  cognom inicial  cognom final</pre>
+      per exemple:
+      <pre>
+1    8812F     A      FI
+2    8813G     FL     PR
+3    8814K     PS     Z
+      </pre>
+      separa les diferents parts d'una mateixa fila amb uns espais (no importa quants)
+    </p>
+    <textarea autofocus rows="20" id="config-area" placeholder="1    8812F     A      FI ..."></textarea>
+  </section>
+
+  <section class="main operation" style="display: none">
+    <input type="button" onclick="goConfig()" value="[configurar]">
+    <h1>BENVINGUTS</h1>
+    <p>Escriviu les primeres lletres del vostre cognom per a saber quina taula us toca.</p>
+    <p>No cal posar accents. - No accepta els caràcters <tt>Ç</tt> i <tt>Ñ</tt>.</p>
+    <input type="text" id="cognom">
+    <h2 id="result" style="display: none">Us toca la taula num. <span id="num_taula"></span> (codi <span id="codi_taula"></span>)</h2>
+  </section>
+
+
+  <script type="text/javascript">
+    document.querySelector("#config-area").onkeyup = function () {
+      setTimeout(function () { parseConfig(document.querySelector("#config-area").value) });
+    }
+    document.querySelector("#cognom").onkeyup = function () {
+      setTimeout(function () { parseSurname(document.querySelector("#cognom").value) });
+    }
+  </script>
+</body>
+
